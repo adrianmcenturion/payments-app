@@ -1,6 +1,7 @@
 "use client";
 
 import type {DayProps} from "react-day-picker";
+import type {CalendarProps} from "@/types";
 
 import * as React from "react";
 import {ChevronLeft, ChevronRight} from "lucide-react";
@@ -8,8 +9,6 @@ import {Button, DayPicker, useDayRender} from "react-day-picker";
 
 import {cn} from "@/lib/utils";
 import {buttonVariants} from "@/components/ui/button";
-
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function IconLeft({...props}) {
   return <ChevronLeft className="h-8 w-8" />;
@@ -36,7 +35,7 @@ function CustomDay(props: DayProps): JSX.Element {
   return (
     <Button ref={buttonRef} name="day" {...dayRender.buttonProps}>
       <div
-        className={`relative m-0 flex h-full w-full items-center justify-center overflow-hidden ${
+        className={` relative m-0 flex size-10 items-center justify-center overflow-hidden md:size-[15] lg:size-20  ${
           dayRender.activeModifiers.apaPayments ||
           dayRender.activeModifiers.donPayments ||
           dayRender.activeModifiers.spPayments ||
@@ -70,18 +69,19 @@ function Calendar({className, classNames, showOutsideDays = true, ...props}: Cal
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({variant: "outline"}),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+          "size-7 bg-transparent p-0 opacity-50 hover:opacity-100",
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex border-b-2 py-2 border-solid",
-        head_cell: "text-muted-foreground rounded-md w-9 lg:w-20  font-normal text-[0.8rem] ",
+        head_cell:
+          "text-muted-foreground rounded-md w-11 md:w-15 lg:w-20  font-normal text-[0.8rem] ",
         row: "flex w-full mt-2 ",
-        cell: "h-9  w-9 lg:w-20 lg:h-20  text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-9",
+        cell: "size-11 md:size-15 lg:size-20  text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-9",
         day: cn(
           buttonVariants({variant: "ghost"}),
-          "h-9  w-9 lg:w-20 lg:h-20 p-0 font-normal aria-selected:opacity-100",
+          "size-11 md:size-15 lg:size-20 p-0 font-normal aria-selected:opacity-100",
         ),
         day_range_end: "day-range-end",
         day_selected:

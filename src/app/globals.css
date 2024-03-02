@@ -28,7 +28,7 @@
     --radius: 0.75rem;
   }
 
-  .dark {
+  :root[class~="dark"] {
     --background: 224 71.4% 4.1%;
     --foreground: 210 20% 98%;
     --card: 224 71.4% 4.1%;
@@ -51,6 +51,9 @@
   }
 }
 
+.bg-light {
+  background-color: 0 0% 100%;
+}
 
 .dgs {
   @apply bg-violet-600;
@@ -69,7 +72,7 @@
 }
 
 .flag {
-  @apply h-2 w-2 md:h-5 md:w-3 
+  @apply h-2 w-2 md:h-2 md:w-3 lg:h-5
 }
 
 

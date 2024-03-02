@@ -1,6 +1,7 @@
 "use client";
 
-import type {ColumnDef, SortingState} from "@tanstack/react-table";
+import type {SortingState} from "@tanstack/react-table";
+import type {DataTableProps} from "@/types";
 
 import * as React from "react";
 import {flexRender, getCoreRowModel, useReactTable, getSortedRowModel} from "@tanstack/react-table";
@@ -14,11 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-}
 
 export function DataTable<TData, TValue>({columns, data}: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -34,14 +30,14 @@ export function DataTable<TData, TValue>({columns, data}: DataTableProps<TData, 
   });
 
   return (
-    <div className="rounded-md border">
+    <div className="mx-auto  rounded-md border">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="">
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -64,8 +60,8 @@ export function DataTable<TData, TValue>({columns, data}: DataTableProps<TData, 
             ))
           ) : (
             <TableRow>
-              <TableCell className="h-24 text-center" colSpan={columns.length}>
-                No results.
+              <TableCell className="size-24 text-center" colSpan={columns.length}>
+                Sin resultados
               </TableCell>
             </TableRow>
           )}
@@ -73,12 +69,13 @@ export function DataTable<TData, TValue>({columns, data}: DataTableProps<TData, 
         <TableFooter>
           {table.getFooterGroups().map((footerEl) => (
             <TableRow key={footerEl.id}>
-              <TableCell>Total</TableCell>
-              {footerEl.headers.map((headerEl) => (
-                <TableCell key={headerEl.id} colSpan={headerEl.colSpan}>
-                  {flexRender(headerEl.column.columnDef.footer, headerEl.getContext())}
-                </TableCell>
-              ))}
+              {footerEl.headers.map((headerEl) => {
+                return (
+                  <TableCell key={headerEl.id} colSpan={headerEl.colSpan}>
+                    {flexRender(headerEl.column.columnDef.footer, headerEl.getContext())}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </TableFooter>

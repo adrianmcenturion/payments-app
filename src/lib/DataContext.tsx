@@ -1,17 +1,6 @@
-import type {ReactNode} from "react";
-import type {PartnerProp} from "@/components/columns";
+import type {DataContextProps, DataContextType, PartnerProp} from "@/types";
 
 import {createContext, useContext, useState} from "react";
-
-// Definición de tipos
-interface DataContextProps {
-  children: ReactNode;
-}
-
-interface DataContextType {
-  data: PartnerProp | string;
-  setData: (data: PartnerProp | string) => void;
-}
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -21,7 +10,6 @@ export function DataProvider({children}: DataContextProps) {
   return <DataContext.Provider value={{data, setData}}>{children}</DataContext.Provider>;
 }
 
-// Hook personalizado para acceder al contexto
 export const useData = () => {
   const context = useContext(DataContext);
 

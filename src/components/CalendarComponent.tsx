@@ -1,23 +1,24 @@
 "use client";
 
 import type {DateRange} from "react-day-picker";
-import type {PartnerProp} from "./columns";
+import type {CalendarProp, PartnerProp, Payment} from "@/types";
 
-import * as React from "react";
 import {es} from "date-fns/locale";
-import {isAfter, isBefore, isEqual} from "date-fns";
+import {isAfter, isBefore, isEqual, isSameDay} from "date-fns";
+import {toPng} from "html-to-image";
+import {useCallback, useEffect, useRef, useState} from "react";
+import {useTheme} from "next-themes";
 
 import {Calendar} from "@/components/ui/calendar";
 import {filterPaymentsByPartner} from "@/lib/utils";
 import {useData} from "@/lib/DataContext";
 
-import {columns, type Payment} from "./columns";
+import {columns} from "./columns";
 import {DataTable} from "./data-table";
 import FilterComponent from "./FilterComponent";
-
-interface CalendarProp {
-  dates: Payment[];
-}
+import {Button} from "./ui/button";
+import {Toaster} from "./ui/toaster";
+import {useToast} from "./ui/use-toast";
 
 export function CalendarComponent({dates}: CalendarProp) {
   const defaultSelected: DateRange = {
@@ -25,12 +26,18 @@ export function CalendarComponent({dates}: CalendarProp) {
     to: new Date(),
   };
 
+  const {toast} = useToast();
+  const {theme} = useTheme();
   const {data} = useData();
 
-  const [range, setRange] = React.useState<DateRange | undefined>(defaultSelected);
-  const [selectedDays, setSelectedDays] = React.useState<Payment[]>([]);
+  const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
+  const [selectedDays, setSelectedDays] = useState<Payment[]>(() => {
+    const currentDate = new Date();
 
-  const [filterDates, setFilterDates] = React.useState<Payment[]>(selectedDays);
+    return dates.filter((d) => isSameDay(new Date(d.formateada), currentDate));
+  });
+
+  const [filterDates, setFilterDates] = useState<Payment[]>(selectedDays);
 
   const handleSelectedDates = (filterDates: Payment[]) => {
     if (!range) return;
@@ -56,21 +63,20 @@ export function CalendarComponent({dates}: CalendarProp) {
     setFilterDates(filtered);
   };
 
-  React.useEffect(() => {
-    const filteredPartner = () => {
-      filterPartners(data);
-    };
-
-    filteredPartner();
-  }, [data]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     const filteredDates = () => {
       handleSelectedDates(filterDates);
     };
 
     filteredDates();
   }, [range, filterDates]);
+  useEffect(() => {
+    const filteredPartner = () => {
+      filterPartners(data);
+    };
+
+    filteredPartner();
+  }, [data]);
 
   const apaPayments = filterPaymentsByPartner("apa", filterDates);
   const donPayments = filterPaymentsByPartner("don", filterDates);
@@ -80,6 +86,37 @@ export function CalendarComponent({dates}: CalendarProp) {
   console.log("selectedDays ", selectedDays);
 
   console.log("range ", range);
+
+  console.log("filteredDays ", filterDates);
+
+  const ref = useRef<HTMLDivElement>(null);
+
+  const changeBgColor =
+    theme === "dark" ? {backgroundColor: "transparent"} : {backgroundColor: "white"};
+
+  const handleScreenshot = useCallback(() => {
+    if (ref.current === null) {
+      return;
+    }
+
+    toPng(ref.current, {
+      cacheBust: true,
+      style: changeBgColor,
+    })
+      .then(async (dataUrl) => {
+        const resp = await fetch(dataUrl);
+        const blob = await resp.blob();
+        const img = [new ClipboardItem({"image/png": blob})];
+
+        await navigator.clipboard.write(img);
+        toast({
+          title: "Pantalla capturada",
+        });
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }, [ref, theme]);
 
   return (
     <>
@@ -97,7 +134,14 @@ export function CalendarComponent({dates}: CalendarProp) {
         onSelect={setRange}
       />
       <FilterComponent />
-      <DataTable columns={columns} data={selectedDays} />
+
+      <Button className="mb-3" variant="outline" onClick={handleScreenshot}>
+        Capturar pantalla
+      </Button>
+      <div ref={ref} className="">
+        <DataTable columns={columns} data={selectedDays} />
+      </div>
+      <Toaster />
     </>
   );
 }

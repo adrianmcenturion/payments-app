@@ -1,6 +1,7 @@
 "use client";
 
 import type {ColumnDef} from "@tanstack/react-table";
+import type {Payment} from "@/types";
 
 import {format} from "date-fns";
 import {ArrowUpDown} from "lucide-react";
@@ -8,22 +9,6 @@ import {ArrowUpDown} from "lucide-react";
 import {Badge} from "@/components/ui/badge";
 
 import {Button} from "./ui/button";
-
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-
-export interface PartnerProp {
-  socio: "apa" | "sp" | "dgs" | "don" | "all";
-}
-
-export interface Payment {
-  socio: PartnerProp;
-  vencimientos?: Date;
-  formateada: Date;
-  conceptos: string;
-  valor: number | string;
-  status?: "pending" | "processing" | "success" | "failed";
-}
 
 export const columns: ColumnDef<Payment>[] = [
   {
@@ -50,16 +35,18 @@ export const columns: ColumnDef<Payment>[] = [
         </Badge>
       );
     },
+    footer: "Total: ",
   },
   {
     accessorKey: "formateada",
     header: ({column}) => {
       return (
         <Button
+          className=""
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Vencimientos
+          Vto.
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -105,8 +92,8 @@ export const columns: ColumnDef<Payment>[] = [
       });
     },
   },
-  {
-    accessorKey: "status",
-    header: "Status",
-  },
+  // {
+  //   accessorKey: "status",
+  //   header: "Status",
+  // },
 ];

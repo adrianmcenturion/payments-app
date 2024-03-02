@@ -1,14 +1,10 @@
 "use client";
 
-import type {Payment} from "./columns";
+import type {CalendarProp} from "@/types";
 
 import {DataProvider} from "@/lib/DataContext";
 
 import {CalendarComponent} from "./CalendarComponent";
-
-interface CalendarProp {
-  dates: Payment[];
-}
 
 function CalendarWrapper({dates}: CalendarProp) {
   return (

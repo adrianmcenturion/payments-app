@@ -1,4 +1,4 @@
-import type {PartnerProp, Payment} from "@/components/columns";
+import type {PartnerProp, Payment} from "@/types";
 
 import {type ClassValue, clsx} from "clsx";
 import {twMerge} from "tailwind-merge";

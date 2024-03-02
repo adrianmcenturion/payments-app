@@ -1,7 +1,5 @@
 "use clinet";
 
-import React from "react";
-
 import {useData} from "@/lib/DataContext";
 
 import {Button} from "./ui/button";
@@ -15,7 +13,8 @@ function FilterComponent() {
 
   const renderButton = (value: string, className: string, label: string) => (
     <Button
-      className={`uppercase hover:opacity-80 focus:border-[1px] focus:border-primary ${className}`}
+      className={`text-xs uppercase hover:opacity-80 focus:border-[1px] focus:border-primary md:text-sm ${className}`}
+      size="sm"
       value={value}
       onClick={() => handleClick(value)}
     >
@@ -24,7 +23,7 @@ function FilterComponent() {
   );
 
   return (
-    <div className="my-4 flex items-center justify-center gap-6">
+    <div className="my-4 flex  items-center justify-center gap-2 lg:gap-6">
       {renderButton("apa", "apa hover:bg-orange-500", "apa")}
       {renderButton("sp", "sp hover:bg-pink-300", "sp")}
       {renderButton("dgs", "dgs hover:bg-violet-500", "dgs")}
