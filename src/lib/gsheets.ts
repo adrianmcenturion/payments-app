@@ -1,4 +1,4 @@
-import type {PartnerProp, Payment} from "@/components/columns";
+import type {PartnerProp, Payment} from "@/types";
 
 import {google} from "googleapis";
 import {GoogleSpreadsheet} from "google-spreadsheet";
