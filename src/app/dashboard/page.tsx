@@ -3,12 +3,13 @@ import {redirect} from "next/navigation";
 import {getPayments} from "@/lib/gsheets";
 import CalendarWrapper from "@/components/CalendarComponent.client";
 import readUserSession from "@/lib/actions";
+import {publicPaths} from "@/lib/utils";
 
 export default async function PrivatePage() {
   const {data} = await readUserSession();
 
   if (!data.session) {
-    return redirect("/");
+    return redirect(publicPaths.login);
   }
 
   const dates = await getPayments();

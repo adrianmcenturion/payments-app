@@ -10,3 +10,11 @@ export function cn(...inputs: ClassValue[]) {
 export const filterPaymentsByPartner = (partner: PartnerProp | string, dates: Payment[]) => {
   return dates.filter((d) => d.socio === partner).map((d) => new Date(d.formateada));
 };
+
+export const publicPaths = {
+  login: "/login",
+};
+
+export const privatePaths = {
+  dashboard: "/dashboard",
+};
