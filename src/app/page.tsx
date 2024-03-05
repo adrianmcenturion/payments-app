@@ -6,6 +6,8 @@ import {privatePaths, publicPaths} from "@/lib/utils";
 export default async function Home() {
   const {data} = await readUserSession();
 
+  console.log(data);
+
   !data.session ? redirect(publicPaths.login) : redirect(privatePaths.dashboard);
 
   return (

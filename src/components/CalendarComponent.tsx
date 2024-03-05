@@ -29,7 +29,7 @@ export function CalendarComponent({dates}: CalendarProp) {
   const {toast} = useToast();
   const {theme} = useTheme();
   const {data} = useData();
-
+  const ref = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
   const [selectedDays, setSelectedDays] = useState<Payment[]>(() => {
     const currentDate = new Date();
@@ -70,6 +70,7 @@ export function CalendarComponent({dates}: CalendarProp) {
 
     filteredDates();
   }, [range, filterDates]);
+
   useEffect(() => {
     const filteredPartner = () => {
       filterPartners(data);
@@ -82,14 +83,6 @@ export function CalendarComponent({dates}: CalendarProp) {
   const donPayments = filterPaymentsByPartner("don", filterDates);
   const spPayments = filterPaymentsByPartner("sp", filterDates);
   const dgsPayments = filterPaymentsByPartner("dgs", filterDates);
-
-  console.log("selectedDays ", selectedDays);
-
-  console.log("range ", range);
-
-  console.log("filteredDays ", filterDates);
-
-  const ref = useRef<HTMLDivElement>(null);
 
   const changeBgColor =
     theme === "dark" ? {backgroundColor: "transparent"} : {backgroundColor: "white"};

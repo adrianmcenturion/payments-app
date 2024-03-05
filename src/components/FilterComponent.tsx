@@ -1,4 +1,4 @@
-"use clinet";
+"use client";
 
 import {useData} from "@/lib/DataContext";
 
