@@ -2,7 +2,6 @@ import {redirect} from "next/navigation";
 
 import {getPayments} from "@/lib/gsheets";
 import CalendarWrapper from "@/components/CalendarComponent.client";
-import {SwitchTheme} from "@/components/Switch";
 import readUserSession from "@/lib/actions";
 
 export default async function PrivatePage() {
