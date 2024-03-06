@@ -23,7 +23,6 @@ import {useToast} from "./ui/use-toast";
 export function CalendarComponent({dates}: CalendarProp) {
   const defaultSelected: DateRange = {
     from: new Date(),
-    to: new Date(),
   };
 
   const {toast} = useToast();
@@ -36,7 +35,6 @@ export function CalendarComponent({dates}: CalendarProp) {
 
     return dates.filter((d) => isSameDay(new Date(d.formateada), currentDate));
   });
-
   const [filterDates, setFilterDates] = useState<Payment[]>(selectedDays);
 
   const handleSelectedDates = (filterDates: Payment[]) => {
@@ -64,11 +62,23 @@ export function CalendarComponent({dates}: CalendarProp) {
   };
 
   useEffect(() => {
-    const filteredDates = () => {
-      handleSelectedDates(filterDates);
+    const handleSelectedDates = (filterDates: Payment[]) => {
+      if (!range) return;
+      if (!range.to) return;
+
+      const filtered = filterDates.filter((d) => {
+        return (
+          (isAfter(new Date(d.formateada), new Date(range.from!)) ||
+            isEqual(new Date(d.formateada), new Date(range.from!))) &&
+          (isBefore(new Date(d.formateada), new Date(range.to!)) ||
+            isEqual(new Date(d.formateada), new Date(range.to!)))
+        );
+      });
+
+      setSelectedDays(filtered);
     };
 
-    filteredDates();
+    handleSelectedDates(filterDates);
   }, [range, filterDates]);
 
   useEffect(() => {

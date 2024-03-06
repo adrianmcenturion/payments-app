@@ -8,8 +8,6 @@ import {publicPaths} from "@/lib/utils";
 export default async function PrivatePage() {
   const {data} = await readUserSession();
 
-  console.log(data);
-
   if (!data.session) {
     return redirect(publicPaths.login);
   }
