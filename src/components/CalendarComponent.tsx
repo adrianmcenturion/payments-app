@@ -37,30 +37,6 @@ export function CalendarComponent({dates}: CalendarProp) {
   });
   const [filterDates, setFilterDates] = useState<Payment[]>(selectedDays);
 
-  const handleSelectedDates = (filterDates: Payment[]) => {
-    if (!range) return;
-
-    const filtered = filterDates.filter((d) => {
-      return (
-        (isAfter(new Date(d.formateada), new Date(range.from!)) ||
-          isEqual(new Date(d.formateada), new Date(range.from!))) &&
-        (isBefore(new Date(d.formateada), new Date(range.to!)) ||
-          isEqual(new Date(d.formateada), new Date(range.to!)))
-      );
-    });
-
-    setSelectedDays(filtered);
-  };
-
-  const filterPartners = (partner: PartnerProp | string) => {
-    const filtered = dates.filter((d) => {
-      if (partner === "all" || partner === "") return dates;
-      else return d.socio === partner;
-    });
-
-    setFilterDates(filtered);
-  };
-
   useEffect(() => {
     const handleSelectedDates = (filterDates: Payment[]) => {
       if (!range) return;
@@ -82,12 +58,17 @@ export function CalendarComponent({dates}: CalendarProp) {
   }, [range, filterDates]);
 
   useEffect(() => {
-    const filteredPartner = () => {
-      filterPartners(data);
+    const filterPartners = (partner: PartnerProp | string) => {
+      const filtered = dates.filter((d) => {
+        if (partner === "all" || partner === "") return dates;
+        else return d.socio === partner;
+      });
+
+      setFilterDates(filtered);
     };
 
-    filteredPartner();
-  }, [data]);
+    filterPartners(data);
+  }, [data, dates]);
 
   const apaPayments = filterPaymentsByPartner("apa", filterDates);
   const donPayments = filterPaymentsByPartner("don", filterDates);
