@@ -5,9 +5,7 @@ import type {CalendarProp, PartnerProp, Payment} from "@/types";
 
 import {es} from "date-fns/locale";
 import {isAfter, isBefore, isEqual, isSameDay} from "date-fns";
-import {toPng} from "html-to-image";
-import {useCallback, useEffect, useRef, useState} from "react";
-import {useTheme} from "next-themes";
+import {useEffect, useState} from "react";
 
 import {Calendar} from "@/components/ui/calendar";
 import {filterPaymentsByPartner} from "@/lib/utils";
@@ -16,31 +14,25 @@ import {useData} from "@/lib/DataContext";
 import {columns} from "./columns";
 import {DataTable} from "./data-table";
 import FilterComponent from "./FilterComponent";
-import {Button} from "./ui/button";
 import {Toaster} from "./ui/toaster";
-import {useToast} from "./ui/use-toast";
+import ScreenShotComponent from "./ScreenShotComponent";
 
 export function CalendarComponent({dates}: CalendarProp) {
   const defaultSelected: DateRange = {
     from: new Date(),
+    // to: new Date(),
   };
 
-  const {toast} = useToast();
-  const {theme} = useTheme();
   const {data} = useData();
-  const ref = useRef<HTMLDivElement>(null);
-  const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
-  const [selectedDays, setSelectedDays] = useState<Payment[]>(() => {
-    const currentDate = new Date();
 
-    return dates.filter((d) => isSameDay(new Date(d.formateada), currentDate));
-  });
+  const [range, setRange] = useState<DateRange | undefined>(defaultSelected);
+  const [selectedDays, setSelectedDays] = useState<Payment[]>(dates);
   const [filterDates, setFilterDates] = useState<Payment[]>(selectedDays);
 
   useEffect(() => {
     const handleSelectedDates = (filterDates: Payment[]) => {
       if (!range) return;
-      if (!range.to) return;
+      // if (!range.to) return;
 
       const filtered = filterDates.filter((d) => {
         return (
@@ -75,32 +67,8 @@ export function CalendarComponent({dates}: CalendarProp) {
   const spPayments = filterPaymentsByPartner("sp", filterDates);
   const dgsPayments = filterPaymentsByPartner("dgs", filterDates);
 
-  const changeBgColor =
-    theme === "dark" ? {backgroundColor: "transparent"} : {backgroundColor: "white"};
-
-  const handleScreenshot = useCallback(() => {
-    if (ref.current === null) {
-      return;
-    }
-
-    toPng(ref.current, {
-      cacheBust: true,
-      style: changeBgColor,
-    })
-      .then(async (dataUrl) => {
-        const resp = await fetch(dataUrl);
-        const blob = await resp.blob();
-        const img = [new ClipboardItem({"image/png": blob})];
-
-        await navigator.clipboard.write(img);
-        toast({
-          title: "Pantalla capturada",
-        });
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  }, [ref, theme]);
+  console.log("dates ", dates);
+  console.log("selectedDays ", selectedDays);
 
   return (
     <>
@@ -119,12 +87,9 @@ export function CalendarComponent({dates}: CalendarProp) {
       />
       <FilterComponent />
 
-      <Button className="mb-3" variant="outline" onClick={handleScreenshot}>
-        Capturar pantalla
-      </Button>
-      <div ref={ref} className="">
+      <ScreenShotComponent>
         <DataTable columns={columns} data={selectedDays} />
-      </div>
+      </ScreenShotComponent>
       <Toaster />
     </>
   );

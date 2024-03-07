@@ -2,6 +2,7 @@ import type {PartnerProp, Payment} from "@/types";
 
 import {google} from "googleapis";
 import {GoogleSpreadsheet} from "google-spreadsheet";
+import {revalidateTag} from "next/cache";
 
 export async function getPayments(): Promise<Payment[]> {
   try {
@@ -38,6 +39,8 @@ export async function getPayments(): Promise<Payment[]> {
 
       return Payment;
     });
+
+    revalidateTag("payments");
 
     return allVencimientos;
   } catch (err) {
