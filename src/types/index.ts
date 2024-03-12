@@ -22,10 +22,6 @@ export interface CalendarProp {
   dates: Payment[];
 }
 
-export interface CalendarProp {
-  dates: Payment[];
-}
-
 export interface PartnerProp {
   socio: "apa" | "sp" | "dgs" | "don" | "all";
 }
