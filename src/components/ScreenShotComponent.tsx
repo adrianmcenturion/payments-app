@@ -16,7 +16,7 @@ function ScreenShotComponent({children}: ScreenShotComponentProps) {
 
   const handleScreenshot = useCallback(() => {
     const changeBgColor =
-      theme === "dark" ? {backgroundColor: "transparent"} : {backgroundColor: "white"};
+      theme === "dark" ? {backgroundColor: "#030712"} : {backgroundColor: "white"};
 
     if (ref.current === null) {
       return;
