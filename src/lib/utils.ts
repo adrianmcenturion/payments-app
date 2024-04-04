@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const filterPaymentsByPartner = (partner: PartnerProp | string, dates: Payment[]) => {
-  return dates.filter((d) => d.socio === partner).map((d) => new Date(d.formateada));
+  return dates.filter((d) => d.socio === partner).map((d) => new Date(d.vencimientos));
 };
 
 export const publicPaths = {
