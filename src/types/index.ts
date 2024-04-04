@@ -28,9 +28,10 @@ export interface PartnerProp {
 
 export interface Payment {
   socio: PartnerProp;
-  vencimientos?: Date;
-  formateada: Date;
+  vencimientosSinFormato?: Date;
+  vencimientos: Date;
   conceptos: string;
-  valor: number | string;
+  valorARS: number | string;
+  valorUSD?: number | string;
   status?: "pending" | "processing" | "success" | "failed";
 }

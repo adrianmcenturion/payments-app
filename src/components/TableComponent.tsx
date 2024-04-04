@@ -4,7 +4,6 @@ import type {DateRange} from "react-day-picker";
 import {useEffect, useState} from "react";
 import {isAfter, isBefore, isEqual, isSameDay} from "date-fns";
 
-import ScreenShotComponent from "./ScreenShotComponent";
 import {columns} from "./columns";
 import {DataTable} from "./data-table";
 import {Toaster} from "./ui/toaster";
@@ -19,7 +18,7 @@ function TableComponent({payments, range}: TableComponentProp) {
     payments.filter((d) => {
       if (!range) return;
 
-      if (isSameDay(d.formateada, range.from!)) {
+      if (isSameDay(d.vencimientos, range.from!)) {
         return d;
       }
     }),
@@ -33,10 +32,10 @@ function TableComponent({payments, range}: TableComponentProp) {
 
       const filtered = payments.filter((d) => {
         return (
-          (isAfter(new Date(d.formateada), new Date(range.from!)) ||
-            isEqual(new Date(d.formateada), new Date(range.from!))) &&
-          (isBefore(new Date(d.formateada), new Date(range.to!)) ||
-            isEqual(new Date(d.formateada), new Date(range.to!)))
+          (isAfter(new Date(d.vencimientos), new Date(range.from!)) ||
+            isEqual(new Date(d.vencimientos), new Date(range.from!))) &&
+          (isBefore(new Date(d.vencimientos), new Date(range.to!)) ||
+            isEqual(new Date(d.vencimientos), new Date(range.to!)))
         );
       });
 
@@ -48,9 +47,8 @@ function TableComponent({payments, range}: TableComponentProp) {
 
   return (
     <>
-      <ScreenShotComponent>
-        <DataTable columns={columns} data={selectedDays} />
-      </ScreenShotComponent>
+      <DataTable columns={columns} data={selectedDays} />
+
       <Toaster />
     </>
   );

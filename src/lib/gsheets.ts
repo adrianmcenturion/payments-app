@@ -31,9 +31,10 @@ export async function getPayments(): Promise<Payment[]> {
       const Payment: Payment = {
         socio: row.get("socio") as PartnerProp,
         conceptos: row.get("conceptos") as string,
-        formateada: row.get("formateada") as Date,
-        valor: row.get("valor") as string | number,
-        vencimientos: row.get("vencimientos") as Date,
+        vencimientos: row.get("formateada") as Date,
+        valorARS: row.get("valor") as string | number,
+        valorUSD: row.get("valor USD") as string | number,
+        vencimientosSinFormato: row.get("vencimientos") as Date,
       };
 
       return Payment;

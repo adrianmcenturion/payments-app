@@ -35,10 +35,10 @@ export const columns: ColumnDef<Payment>[] = [
         </Badge>
       );
     },
-    footer: "Total: ",
+    footer: () => <div className="ml-1 text-left">Total: </div>,
   },
   {
-    accessorKey: "formateada",
+    accessorKey: "vencimientos",
     header: ({column}) => {
       return (
         <Button
@@ -52,7 +52,7 @@ export const columns: ColumnDef<Payment>[] = [
       );
     },
     cell: ({row}) => {
-      const vencimiento = format(new Date(row.getValue("formateada")), "dd-MM");
+      const vencimiento = format(new Date(row.getValue("vencimientos")), "dd-MM");
 
       return <div className="pl-6 font-medium">{String(vencimiento)}</div>;
     },
@@ -62,38 +62,77 @@ export const columns: ColumnDef<Payment>[] = [
     header: "Concepto",
   },
   {
-    accessorKey: "valor",
-    header: "Valor",
+    accessorKey: "valorARS",
+    header: () => {
+      return <div className="text-center">Valor ARS</div>;
+    },
     cell: ({row}) => {
-      const value: string = row.getValue("valor");
+      const value: string = row.getValue("valorARS");
 
       const payment: string | number = isNaN(parseFloat(value))
-        ? String(row.getValue("valor"))
+        ? String(row.getValue("valorARS"))
         : parseFloat(value.replace(/\./g, "").replace(",", ".")).toLocaleString("es-AR", {
             currency: "ARS",
             style: "currency",
             maximumFractionDigits: 2,
           });
 
-      return <div className="font-medium">{payment}</div>;
+      return <div className="text-center font-medium">{payment ? payment : "-"}</div>;
     },
     footer: ({table}) => {
       const sum = table.getFilteredRowModel().rows.reduce((acc, row, index) => {
-        const value: string = row.getValue("valor");
+        const value: string = row.getValue("valorARS");
         const payment: string | number = parseFloat(value.replace(/\./g, "").replace(",", "."));
 
         return isNaN(payment) || (index === 0 && isNaN(payment)) ? acc : acc + payment;
       }, 0);
 
-      return sum.toLocaleString("es-AR", {
-        currency: "ARS",
-        style: "currency",
-        maximumFractionDigits: 2,
-      });
+      return (
+        <div className="ml-3 text-center">
+          {sum.toLocaleString("es-AR", {
+            currency: "ARS",
+            style: "currency",
+            maximumFractionDigits: 2,
+          })}
+        </div>
+      );
     },
   },
-  // {
-  //   accessorKey: "status",
-  //   header: "Status",
-  // },
+  {
+    accessorKey: "valorUSD",
+    header: () => {
+      return <div className="text-center">Valor USD</div>;
+    },
+    cell: ({row}) => {
+      const value: string = row.getValue("valorUSD");
+
+      const payment: string | number = isNaN(parseFloat(value))
+        ? String(row.getValue("valorUSD"))
+        : parseFloat(value.replace(/\./g, "").replace(",", ".")).toLocaleString("es-AR", {
+            currency: "USD",
+            style: "currency",
+            maximumFractionDigits: 2,
+          });
+
+      return <div className="ml-3 text-center font-medium">{payment ? payment : "-"}</div>;
+    },
+    footer: ({table}) => {
+      const sum = table.getFilteredRowModel().rows.reduce((acc, row, index) => {
+        const value: string = row.getValue("valorUSD");
+        const payment: string | number = parseFloat(value.replace(/\./g, "").replace(",", "."));
+
+        return isNaN(payment) || (index === 0 && isNaN(payment)) ? acc : acc + payment;
+      }, 0);
+
+      return (
+        <div className="ml-3 text-center">
+          {sum.toLocaleString("es-AR", {
+            currency: "USD",
+            style: "currency",
+            maximumFractionDigits: 2,
+          })}
+        </div>
+      );
+    },
+  },
 ];

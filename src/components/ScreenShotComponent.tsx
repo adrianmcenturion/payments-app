@@ -46,7 +46,11 @@ function ScreenShotComponent({children}: ScreenShotComponentProps) {
 
   return (
     <>
-      <Button className="mb-3" variant="outline" onClick={handleScreenshot}>
+      <Button
+        className="bg-green-600 hover:bg-green-700"
+        variant="outline"
+        onClick={handleScreenshot}
+      >
         Capturar pantalla
       </Button>
       <div ref={ref}>{children}</div>
