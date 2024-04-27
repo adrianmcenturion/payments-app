@@ -3,6 +3,7 @@
 import type {SortingState, VisibilityState} from "@tanstack/react-table";
 import type {DataTableProps} from "@/types";
 
+import {ChevronDownIcon} from "@radix-ui/react-icons";
 import * as React from "react";
 import {flexRender, getCoreRowModel, useReactTable, getSortedRowModel} from "@tanstack/react-table";
 
@@ -15,8 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-import {Checkbox} from "./ui/checkbox";
+import {Button} from "./ui/button";
 import ScreenShotComponent from "./ScreenShotComponent";
 
 export function DataTable<TData, TValue>({columns, data}: DataTableProps<TData, TValue>) {
@@ -37,29 +44,33 @@ export function DataTable<TData, TValue>({columns, data}: DataTableProps<TData, 
 
   return (
     <div className="mx-auto flex  flex-col gap-3">
-      <div className=" flex items-center justify-between gap-3 rounded-md border p-3">
-        {table
-          .getAllColumns()
-          .filter((column) => column.getCanHide())
-          .map((column) => {
-            return (
-              <div key={column.id} className="flex flex-wrap items-center justify-between gap-1">
-                <Checkbox
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button className="ml-auto" variant="outline">
+            Columnas
+            <span className="pl-2">
+              <ChevronDownIcon className="h-4 w-4" />
+            </span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {table
+            .getAllColumns()
+            .filter((column) => column.getCanHide())
+            .map((column) => {
+              return (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
                   checked={column.getIsVisible()}
                   className="capitalize"
-                  id="visibility"
                   onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                />
-                <label
-                  className="text-sm font-medium capitalize leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  htmlFor="visibility"
                 >
                   {column.id}
-                </label>
-              </div>
-            );
-          })}
-      </div>
+                </DropdownMenuCheckboxItem>
+              );
+            })}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <ScreenShotComponent>
         <div className="rounded-md border">
           <Table>

@@ -16,25 +16,27 @@ export default async function RootLayout({children}: {children: React.ReactNode}
 
   return (
     <html lang="en">
-      <body className="dark container m-auto grid min-h-screen grid-rows-[auto,1fr,auto] content-center bg-background px-4 font-sans antialiased md:px-8">
-        <ThemeProvider
-          disableTransitionOnChange
-          enableSystem
-          attribute="class"
-          defaultTheme="system"
-        >
-          <nav className="flex items-center justify-between p-3">
-            <header className="text-xl font-bold">Control de pagos</header>
-            <div className="flex items-center gap-3">
-              {data.session ? <SignOut /> : null}
-              <SwitchTheme />
-            </div>
-          </nav>
-          <main className="max-w-full overflow-hidden py-8">{children}</main>
-          <footer className="text-center leading-[4rem] opacity-70">
-            © {new Date().getFullYear()} Control de pagos.
-          </footer>
-        </ThemeProvider>
+      <body>
+        <div className="dark container m-auto grid min-h-screen grid-rows-[auto,1fr,auto] content-center bg-background px-4 font-sans antialiased md:px-8">
+          <ThemeProvider
+            disableTransitionOnChange
+            enableSystem
+            attribute="class"
+            defaultTheme="system"
+          >
+            <nav className="flex items-center justify-between p-3">
+              <header className="text-xl font-bold">Control de pagos</header>
+              <div className="flex items-center gap-3">
+                {data.session ? <SignOut /> : null}
+                <SwitchTheme />
+              </div>
+            </nav>
+            <main className="max-w-full overflow-hidden py-8">{children}</main>
+            <footer className="text-center leading-[4rem] opacity-70">
+              © {new Date().getFullYear()} Control de pagos.
+            </footer>
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   );
