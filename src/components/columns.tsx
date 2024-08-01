@@ -35,7 +35,6 @@ export const columns: ColumnDef<Payment>[] = [
         </Badge>
       );
     },
-    footer: () => <div className="ml-1 text-left">Total: </div>,
   },
   {
     accessorKey: "vencimientos",
@@ -54,17 +53,28 @@ export const columns: ColumnDef<Payment>[] = [
     cell: ({row}) => {
       const vencimiento = format(new Date(row.getValue("vencimientos")), "dd-MM");
 
-      return <div className="pl-6 font-medium">{String(vencimiento)}</div>;
+      return <div className="text-center font-medium">{String(vencimiento)}</div>;
     },
   },
   {
     accessorKey: "conceptos",
     header: "Concepto",
+    cell: ({row}) => {
+      return <div className="text-center font-medium">{row.original.conceptos}</div>;
+    },
+  },
+  {
+    id: "total",
+    footer: () => {
+      return <div className="text-center">Total:</div>;
+    },
+    enableSorting: false,
+    enableHiding: false,
   },
   {
     accessorKey: "valorARS",
     header: () => {
-      return <div className="text-center">Valor ARS</div>;
+      return <div className="text-end">Valor ARS</div>;
     },
     cell: ({row}) => {
       const value: string = row.getValue("valorARS");
@@ -77,7 +87,7 @@ export const columns: ColumnDef<Payment>[] = [
             maximumFractionDigits: 2,
           });
 
-      return <div className="text-center font-medium">{payment ? payment : "-"}</div>;
+      return <div className="text-end font-medium">{payment ? payment : "-"}</div>;
     },
     footer: ({table}) => {
       const sum = table.getFilteredRowModel().rows.reduce((acc, row, index) => {
@@ -88,7 +98,7 @@ export const columns: ColumnDef<Payment>[] = [
       }, 0);
 
       return (
-        <div className="ml-3 text-center">
+        <div className="text-end">
           {sum.toLocaleString("es-AR", {
             currency: "ARS",
             style: "currency",
@@ -101,7 +111,7 @@ export const columns: ColumnDef<Payment>[] = [
   {
     accessorKey: "valorUSD",
     header: () => {
-      return <div className="text-center">Valor USD</div>;
+      return <div className="text-end">Valor USD</div>;
     },
     cell: ({row}) => {
       const value: string = row.getValue("valorUSD");
@@ -114,7 +124,7 @@ export const columns: ColumnDef<Payment>[] = [
             maximumFractionDigits: 2,
           });
 
-      return <div className="ml-3 text-center font-medium">{payment ? payment : "-"}</div>;
+      return <div className=" text-end font-medium">{payment ? payment : "-"}</div>;
     },
     footer: ({table}) => {
       const sum = table.getFilteredRowModel().rows.reduce((acc, row, index) => {
@@ -125,7 +135,7 @@ export const columns: ColumnDef<Payment>[] = [
       }, 0);
 
       return (
-        <div className="ml-3 text-center">
+        <div className=" text-end">
           {sum.toLocaleString("es-AR", {
             currency: "USD",
             style: "currency",
