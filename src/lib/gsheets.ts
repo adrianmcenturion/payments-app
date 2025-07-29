@@ -1,4 +1,4 @@
-import type {PartnerProp, Payment} from "@/types";
+import type {Payment, Socio} from "@/types";
 
 import {google} from "googleapis";
 import {GoogleSpreadsheet} from "google-spreadsheet";
@@ -29,7 +29,7 @@ export async function getPayments(): Promise<Payment[]> {
       row.toObject();
 
       const Payment: Payment = {
-        socio: row.get("socio") as PartnerProp,
+        socio: row.get("socio") as Socio,
         conceptos: row.get("conceptos") as string,
         vencimientos: row.get("formateada") as Date,
         valorARS: row.get("valor") as string | number,

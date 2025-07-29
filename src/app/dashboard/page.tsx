@@ -1,9 +1,8 @@
 import {redirect} from "next/navigation";
 
-import {getPayments} from "@/lib/gsheets";
-import CalendarWrapper from "@/components/CalendarComponent.client";
 import readUserSession from "@/lib/actions";
 import {publicPaths} from "@/lib/utils";
+import {CalendarComponent} from "@/components/CalendarComponent";
 
 export default async function PrivatePage() {
   const {data} = await readUserSession();
@@ -12,11 +11,9 @@ export default async function PrivatePage() {
     return redirect(publicPaths.login);
   }
 
-  const dates = await getPayments();
-
   return (
-    <div className=" mx-auto max-w-2xl ">
-      <CalendarWrapper dates={dates} />
+    <div className="max-w-5xlxl mx-auto">
+      <CalendarComponent />
     </div>
   );
 }
