@@ -2,7 +2,6 @@ import type {Payment, Socio} from "@/types";
 
 import {google} from "googleapis";
 import {GoogleSpreadsheet} from "google-spreadsheet";
-import {formatDate} from "date-fns";
 
 const googleAuth = new google.auth.GoogleAuth({
   credentials: {

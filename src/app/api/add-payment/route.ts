@@ -1,4 +1,4 @@
-import type {NewPayment} from "@/hooks/usePayments";
+import type {NewPayment} from "@/types";
 
 import {NextResponse} from "next/server";
 

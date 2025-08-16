@@ -1,4 +1,3 @@
-// app/api/payments/route.ts
 import {NextResponse} from "next/server";
 
 import {getPayments} from "@/lib/gsheets";

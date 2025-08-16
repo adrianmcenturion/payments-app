@@ -38,3 +38,11 @@ export interface Payment {
   valorUSD?: number | string;
   status?: "pending" | "processing" | "success" | "failed";
 }
+
+export interface NewPayment {
+  socio: string;
+  conceptos: string;
+  valor?: number;
+  "valor USD"?: number;
+  vencimientos: Date | string;
+}

@@ -1,9 +1,9 @@
-import type {Payment} from "@/types";
+import type {NewPayment, Payment} from "@/types";
 
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 
 const getPayments = async (): Promise<Payment[]> => {
-  const res = await fetch("/api/payments");
+  const res = await fetch("/api/payments", {cache: "no-store"});
 
   if (!res.ok) {
     throw new Error("Error al cargar los pagos");
@@ -26,15 +26,9 @@ export function usePayments() {
   });
 }
 
-export interface NewPayment {
-  socio: string;
-  conceptos: string;
-  valor?: number;
-  "valor USD"?: number;
-  vencimientos: Date | string;
-}
-
 export function useAddPayment() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (newPayment: NewPayment) => {
       const res = await fetch("/api/add-payment", {
@@ -52,6 +46,9 @@ export function useAddPayment() {
       }
 
       return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ["payments"]});
     },
   });
 }
