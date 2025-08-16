@@ -17,4 +17,5 @@ export const publicPaths = {
 
 export const privatePaths = {
   dashboard: "/dashboard",
+  createPayment: "/dashboard/add-payments",
 };

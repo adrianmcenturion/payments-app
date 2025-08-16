@@ -1,6 +1,7 @@
 import type {Metadata} from "next";
 
 import {PiggyBank} from "lucide-react";
+import Link from "next/link";
 
 import {ThemeProvider} from "@/components/theme-provider";
 import "./globals.css";
@@ -8,6 +9,9 @@ import {SwitchTheme} from "@/components/Switch";
 import SignOut from "@/components/SignOut";
 import readUserSession from "@/lib/actions";
 import {ReactQueryProvider} from "@/lib/providers/ReactQueryProvider";
+import {Button} from "@/components/ui/button";
+import {privatePaths} from "@/lib/utils";
+import {Toaster} from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Control de pagos",
@@ -33,12 +37,25 @@ export default async function RootLayout({children}: {children: React.ReactNode}
                   Control de pagos
                   <PiggyBank size={36} strokeWidth={1.75} />
                 </header>
-                <div className="flex items-center gap-1 md:gap-3">
-                  {data.session ? <SignOut /> : null}
-                  <SwitchTheme />
+                <div className="flex flex-col items-end justify-between gap-1 md:flex-row-reverse md:items-center md:gap-3">
+                  <div className="flex items-center gap-1">
+                    {data.session ? <SignOut /> : null}
+                    <SwitchTheme />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Link href={privatePaths.dashboard}>
+                      <Button size="sm">Home</Button>
+                    </Link>
+                    <Link href={privatePaths.createPayment}>
+                      <Button size="sm">Agregar pagos</Button>
+                    </Link>
+                  </div>
                 </div>
               </nav>
-              <main className="max-w-full overflow-hidden py-8">{children}</main>
+              <main className="max-w-full overflow-hidden py-8">
+                {children}
+                <Toaster />
+              </main>
               <footer className="text-center leading-16 opacity-70">
                 © {new Date().getFullYear()} Control de pagos.
               </footer>
