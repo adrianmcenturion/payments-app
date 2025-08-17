@@ -1,3 +1,5 @@
+"use client";
+
 import type {Payment} from "@/types";
 import type {Table} from "@tanstack/react-table";
 
