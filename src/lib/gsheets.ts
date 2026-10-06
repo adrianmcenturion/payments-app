@@ -4,17 +4,25 @@ import type {GoogleSpreadsheetWorksheet} from "google-spreadsheet";
 import {google} from "googleapis";
 import {GoogleSpreadsheet} from "google-spreadsheet";
 
-export const googleAuth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
-  },
-  scopes: [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/spreadsheets",
-  ],
-});
+let auth: InstanceType<typeof google.auth.GoogleAuth> | undefined;
+
+export function getGoogleAuth() {
+  if (auth) return auth;
+
+  auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    },
+    scopes: [
+      "https://www.googleapis.com/auth/drive",
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/spreadsheets",
+    ],
+  });
+
+  return auth;
+}
 
 const COLUMNA = "DEMANDADO";
 
@@ -110,7 +118,7 @@ async function leerHoja(
 
 // Lee las hojas indicadas (o todas) y devuelve cada aparición de un CUIT con sus datos
 export async function leerHojas(nombres?: string[]): Promise<HojaInfo[]> {
-  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_CUITS_ID!, googleAuth);
+  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_CUITS_ID!, getGoogleAuth());
 
   await doc.loadInfo();
 
@@ -155,7 +163,7 @@ export async function leerHojas(nombres?: string[]): Promise<HojaInfo[]> {
 
 export async function getPayments(): Promise<Payment[]> {
   try {
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID!, googleAuth);
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID!, getGoogleAuth());
 
     await doc.loadInfo();
 
@@ -198,7 +206,7 @@ interface AddPayment {
 
 export async function addPayments(newPayment: AddPayment): Promise<AddPayment> {
   try {
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID!, googleAuth);
+    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID!, getGoogleAuth());
 
     await doc.loadInfo();
 

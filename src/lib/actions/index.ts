@@ -1,7 +1,6 @@
 "use server";
 
-import {arca} from "@/lib/arca"; // ajustá la ruta a tu arca.ts
-
+import {getArca} from "../arca"; // ajustá la ruta a tu arca.ts
 import createSupabaseServerClient from "../supabase/server";
 
 export default async function readUserSession() {
@@ -44,7 +43,7 @@ export async function consultarCuit(_prev: PadronState, formData: FormData): Pro
   }
 
   try {
-    const c = await arca.padron.getTaxpayerDetails(cuit);
+    const c = await getArca().padron.getTaxpayerDetails(cuit);
 
     if (!c) return {status: "not_found"};
 

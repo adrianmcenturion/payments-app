@@ -1,11 +1,9 @@
 import "server-only";
 import {createArcaClient} from "facturas";
 
-const environment = process.env.ARCA_ENVIRONMENT;
+type ArcaClient = ReturnType<typeof createArcaClient>;
 
-if (environment !== "test" && environment !== "production") {
-  throw new Error("ARCA_ENVIRONMENT debe ser test o production");
-}
+let client: ArcaClient | undefined;
 
 // Convierte "\n" literales en saltos de línea reales y saca espacios de más
 function normalizePem(value: string | undefined) {
@@ -17,9 +15,22 @@ function normalizePem(value: string | undefined) {
     .trim();
 }
 
-export const arca = createArcaClient({
-  taxId: process.env.ARCA_TAX_ID,
-  certificatePem: normalizePem(process.env.ARCA_CERTIFICATE_PEM),
-  privateKeyPem: normalizePem(process.env.ARCA_PRIVATE_KEY_PEM),
-  environment,
-});
+// El cliente se crea la primera vez que se usa, no al importar el archivo
+export function getArca(): ArcaClient {
+  if (client) return client;
+
+  const environment = process.env.ARCA_ENVIRONMENT;
+
+  if (environment !== "test" && environment !== "production") {
+    throw new Error("ARCA_ENVIRONMENT debe ser test o production");
+  }
+
+  client = createArcaClient({
+    taxId: process.env.ARCA_TAX_ID,
+    certificatePem: normalizePem(process.env.ARCA_CERTIFICATE_PEM),
+    privateKeyPem: normalizePem(process.env.ARCA_PRIVATE_KEY_PEM),
+    environment,
+  });
+
+  return client;
+}

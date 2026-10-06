@@ -3,8 +3,8 @@
 import {revalidateTag} from "next/cache";
 
 import {getPayments} from "@/lib/gsheets";
-import {arca} from "@/lib/arca";
 import {leerHojas} from "@/lib/gsheets";
+import {getArca} from "@/lib/arca";
 
 export default async function submit() {
   await getPayments();
@@ -48,7 +48,7 @@ function calcularTipo(estado: Datos["estado"], condicion?: string): "A" | "B" | 
 
 async function consultarUno(cuit: string): Promise<Datos> {
   try {
-    const c = await arca.padron.getTaxpayerDetails(cuit);
+    const c = await getArca().padron.getTaxpayerDetails(cuit);
 
     if (!c) return {estado: "no_existe", tipoSugerido: calcularTipo("no_existe")};
 
