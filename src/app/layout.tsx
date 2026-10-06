@@ -49,6 +49,9 @@ export default async function RootLayout({children}: {children: React.ReactNode}
                     <Link href={privatePaths.createPayment}>
                       <Button size="sm">Agregar pagos</Button>
                     </Link>
+                    <Link href={privatePaths.arca}>
+                      <Button size="sm">Arca</Button>
+                    </Link>
                   </div>
                 </div>
               </nav>

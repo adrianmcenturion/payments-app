@@ -1,9 +1,10 @@
 import type {Payment, Socio} from "@/types";
+import type {GoogleSpreadsheetWorksheet} from "google-spreadsheet";
 
 import {google} from "googleapis";
 import {GoogleSpreadsheet} from "google-spreadsheet";
 
-const googleAuth = new google.auth.GoogleAuth({
+export const googleAuth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
     private_key: process.env.GOOGLE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
@@ -14,6 +15,143 @@ const googleAuth = new google.auth.GoogleAuth({
     "https://www.googleapis.com/auth/spreadsheets",
   ],
 });
+
+const COLUMNA = "DEMANDADO";
+
+export interface Aparicion {
+  fila: number; // número de fila en el sheet
+  cuit: string;
+  tipo?: string; // A o B, tal como figura en el sheet
+  total?: number;
+  honorarios?: number;
+  iva?: number;
+}
+
+export interface HojaInfo {
+  hoja: string;
+  apariciones: Aparicion[];
+}
+
+interface Montos {
+  tipo?: string;
+  total?: number;
+  honorarios?: number;
+  iva?: number;
+}
+type FilaCruda = Montos & {demandado: string};
+
+// Convierte "223342,46", "$ 223.342,46" o un número real en number
+function parseMonto(valor: unknown): number | undefined {
+  if (typeof valor === "number") return valor;
+
+  let texto = String(valor ?? "").replace(/[^\d.,-]/g, "");
+
+  if (!texto) return undefined;
+
+  if (texto.includes(",")) {
+    texto = texto.replace(/\./g, "").replace(",", "."); // 223.342,46 -> 223342.46
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(texto)) {
+    texto = texto.replace(/\./g, ""); // 223.342 -> 223342
+  }
+
+  const n = Number(texto);
+
+  return Number.isFinite(n) ? n : undefined;
+}
+
+// Lee la hoja desde el encabezado hacia abajo. null = no tiene la columna DEMANDADO.
+async function leerHoja(
+  sheet: GoogleSpreadsheetWorksheet,
+): Promise<{inicio: number; filas: FilaCruda[]} | null> {
+  const cabecera = await sheet.getCellsInRange("A1:AZ30");
+
+  if (!cabecera) return null;
+
+  for (let f = 0; f < cabecera.length; f++) {
+    const encabezados: string[] = cabecera[f].map((c: unknown) =>
+      String(c ?? "")
+        .trim()
+        .toUpperCase(),
+    );
+
+    const colDemandado = encabezados.indexOf(COLUMNA);
+
+    if (colDemandado === -1) continue;
+
+    const colTotal = encabezados.indexOf("TOTAL");
+    const colHonor = encabezados.findIndex((e) => e.startsWith("HONOR"));
+    const colIva = encabezados.indexOf("IVA");
+    let colTipo = encabezados.indexOf("TIPO");
+
+    if (colTipo === -1) colTipo = encabezados.findIndex((e) => e.startsWith("TIPO"));
+
+    const inicio = f + 2; // primera fila de datos (en base 1)
+    const datos = (await sheet.getCellsInRange(`A${inicio}:AZ`)) ?? [];
+
+    const leer = (r: unknown[] | undefined, col: number) => (col === -1 ? undefined : r?.[col]);
+
+    // filas[i] corresponde a la fila (inicio + i) del sheet
+    const filas: FilaCruda[] = datos.map((r: unknown[]) => ({
+      demandado: String(leer(r, colDemandado) ?? ""),
+      tipo:
+        String(leer(r, colTipo) ?? "")
+          .trim()
+          .toUpperCase() || undefined,
+      total: parseMonto(leer(r, colTotal)),
+      honorarios: parseMonto(leer(r, colHonor)),
+      iva: parseMonto(leer(r, colIva)),
+    }));
+
+    return {inicio, filas};
+  }
+
+  return null;
+}
+
+// Lee las hojas indicadas (o todas) y devuelve cada aparición de un CUIT con sus datos
+export async function leerHojas(nombres?: string[]): Promise<HojaInfo[]> {
+  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_CUITS_ID!, googleAuth);
+
+  await doc.loadInfo();
+
+  const resultado: HojaInfo[] = [];
+
+  for (const sheet of doc.sheetsByIndex) {
+    if (nombres && !nombres.includes(sheet.title)) continue;
+
+    const datos = await leerHoja(sheet);
+
+    if (datos === null) continue; // hoja sin columna DEMANDADO
+
+    const apariciones: Aparicion[] = [];
+
+    datos.filas.forEach((f, i) => {
+      const cuits = f.demandado.match(/\b\d{2}-?\d{8}-?\d\b/g) ?? [];
+
+      if (cuits.length === 0) return;
+
+      // Si la fila del CUIT no tiene montos, se toman los de la fila de arriba
+      const tieneMontos =
+        f.total !== undefined || f.honorarios !== undefined || f.iva !== undefined;
+      const fuente: Montos = tieneMontos ? f : (datos.filas[i - 1] ?? {});
+
+      for (const c of cuits) {
+        apariciones.push({
+          fila: datos.inicio + i,
+          cuit: c.replace(/\D/g, ""),
+          tipo: f.tipo ?? fuente.tipo,
+          total: fuente.total,
+          honorarios: fuente.honorarios,
+          iva: fuente.iva,
+        });
+      }
+    });
+
+    resultado.push({hoja: sheet.title, apariciones});
+  }
+
+  return resultado;
+}
 
 export async function getPayments(): Promise<Payment[]> {
   try {
@@ -48,6 +186,28 @@ export async function getPayments(): Promise<Payment[]> {
       throw new Error("Se produjo un error desconocido");
     }
   }
+}
+
+export async function getCuitsFromSheet(): Promise<string[]> {
+  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_CUITS_ID!, googleAuth);
+
+  await doc.loadInfo();
+
+  const sheet = doc.sheetsByTitle.MM;
+
+  if (!sheet) {
+    throw new Error('No encontré la hoja "MM" en el sheet');
+  }
+
+  // Lee las columnas A a Z completas. Si tu tabla es más ancha, ampliá el rango.
+  const valores = await sheet.getCellsInRange("A:Z");
+
+  // Busca cualquier número de 11 dígitos (con o sin guiones) en toda la hoja,
+  // así no dependés de en qué columna esté el CUIT.
+  const texto = valores.flat().join("\n");
+  const encontrados = texto.match(/\b\d{2}-?\d{8}-?\d\b/g) ?? [];
+
+  return [...new Set(encontrados.map((c) => c.replace(/\D/g, "")))];
 }
 
 interface AddPayment {

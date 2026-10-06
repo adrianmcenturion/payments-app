@@ -26,6 +26,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "date-fns": "^3.6.0",
+    "facturas": "^0.22.1",
     "google-spreadsheet": "^4.1.1",
     "googleapis": "^130.0.0",
     "html-to-image": "^1.11.11",
