@@ -188,28 +188,6 @@ export async function getPayments(): Promise<Payment[]> {
   }
 }
 
-export async function getCuitsFromSheet(): Promise<string[]> {
-  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_CUITS_ID!, googleAuth);
-
-  await doc.loadInfo();
-
-  const sheet = doc.sheetsByTitle.MM;
-
-  if (!sheet) {
-    throw new Error('No encontré la hoja "MM" en el sheet');
-  }
-
-  // Lee las columnas A a Z completas. Si tu tabla es más ancha, ampliá el rango.
-  const valores = await sheet.getCellsInRange("A:Z");
-
-  // Busca cualquier número de 11 dígitos (con o sin guiones) en toda la hoja,
-  // así no dependés de en qué columna esté el CUIT.
-  const texto = valores.flat().join("\n");
-  const encontrados = texto.match(/\b\d{2}-?\d{8}-?\d\b/g) ?? [];
-
-  return [...new Set(encontrados.map((c) => c.replace(/\D/g, "")))];
-}
-
 interface AddPayment {
   socio: string;
   conceptos: string;
