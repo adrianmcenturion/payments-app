@@ -15,7 +15,7 @@ const MAX_CUITS = 200; // CUITs distintos por consulta
 const CONCURRENCIA = 5;
 
 interface Datos {
-  estado: "ok" | "no_existe" | "error";
+  estado: "ok" | "no_existe" | "error" | "sin_cuit";
   nombre?: string;
   direccion?: string;
   condicion?: string;
@@ -24,7 +24,7 @@ interface Datos {
 }
 
 export type Fila = Datos & {
-  cuit: string;
+  cuit: string; // vacío si la fila no tiene CUIT
   hoja: string;
   fila: number;
   tipo?: string; // el que figura en el sheet
@@ -41,7 +41,7 @@ export type LoteState =
 // A: responsable inscripto y monotributo. B: el resto y los CUIT sin datos en ARCA.
 function calcularTipo(estado: Datos["estado"], condicion?: string): "A" | "B" | undefined {
   if (estado === "no_existe") return "B";
-  if (estado === "error" || !condicion) return undefined; // no hay base para sugerir
+  if (estado === "error" || !condicion) return undefined;
 
   return condicion === "responsable_inscripto" || condicion === "monotributo" ? "A" : "B";
 }
@@ -52,12 +52,10 @@ async function consultarUno(cuit: string): Promise<Datos> {
 
     if (!c) return {estado: "no_existe", tipoSugerido: calcularTipo("no_existe")};
 
-    const a = c.address;
-
     return {
       estado: "ok",
       nombre: c.name,
-      direccion: a?.street?.replace(/\s+/g, " ").trim() || undefined,
+      direccion: c.address?.street?.replace(/\s+/g, " ").trim() || undefined,
       condicion: c.condition,
       aviso: c.errors.length ? c.errors.join(", ") : undefined,
       tipoSugerido: calcularTipo("ok", c.condition),
@@ -82,15 +80,15 @@ export async function consultarDesdeSheet(
   try {
     const hojas = await leerHojas(elegidas);
 
-    // Una entrada por cada aparición del CUIT en el sheet
+    // Una entrada por cada aparición, con o sin CUIT
     const apariciones = hojas.flatMap((h) => h.apariciones.map((a) => ({...a, hoja: h.hoja})));
 
     if (apariciones.length === 0) {
-      return {status: "error", message: "No encontré ningún CUIT en las hojas elegidas."};
+      return {status: "error", message: "No encontré ningún CUIT ni montos en las hojas elegidas."};
     }
 
-    // A ARCA se consulta una sola vez cada CUIT distinto
-    const unicos = [...new Set(apariciones.map((a) => a.cuit))];
+    // A ARCA se consulta una sola vez cada CUIT distinto (las filas sin CUIT no se consultan)
+    const unicos = Array.from(new Set(apariciones.filter((a) => a.cuit).map((a) => a.cuit)));
 
     if (unicos.length > MAX_CUITS) {
       return {
@@ -101,32 +99,37 @@ export async function consultarDesdeSheet(
 
     const datos = new Map<string, Datos>();
 
-    // El primero va solo para que el SDK obtenga y guarde el ticket de ARCA
-    datos.set(unicos[0], await consultarUno(unicos[0]));
+    if (unicos.length > 0) {
+      // El primero va solo para que el SDK obtenga y guarde el ticket de ARCA
+      datos.set(unicos[0], await consultarUno(unicos[0]));
 
-    let siguiente = 1;
+      let siguiente = 1;
 
-    async function worker() {
-      while (true) {
-        const i = siguiente++;
+      async function worker() {
+        while (true) {
+          const i = siguiente++;
 
-        if (i >= unicos.length) return;
-        datos.set(unicos[i], await consultarUno(unicos[i]));
+          if (i >= unicos.length) return;
+          datos.set(unicos[i], await consultarUno(unicos[i]));
+        }
       }
+      await Promise.all(Array.from({length: CONCURRENCIA}, worker));
     }
-    await Promise.all(Array.from({length: CONCURRENCIA}, worker));
 
-    // Una fila por aparición: datos de ARCA (repetidos por CUIT) + datos propios de esa fila
-    const filas: Fila[] = apariciones.map((a) => ({
-      cuit: a.cuit,
-      hoja: a.hoja,
-      fila: a.fila,
-      tipo: a.tipo,
-      total: a.total,
-      honorarios: a.honorarios,
-      iva: a.iva,
-      ...datos.get(a.cuit)!,
-    }));
+    const filas: Fila[] = apariciones.map((a) => {
+      const resto: Datos = a.sinCuit ? {estado: "sin_cuit"} : datos.get(a.cuit)!;
+
+      return {
+        cuit: a.cuit,
+        hoja: a.hoja,
+        fila: a.fila,
+        tipo: a.tipo,
+        total: a.total,
+        honorarios: a.honorarios,
+        iva: a.iva,
+        ...resto,
+      };
+    });
 
     return {status: "ok", filas};
   } catch (e) {

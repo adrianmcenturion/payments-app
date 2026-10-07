@@ -25,10 +25,12 @@ export function getGoogleAuth() {
 }
 
 const COLUMNA = "DEMANDADO";
+const REGEX_CUIT = /\b\d{2}-?\d{8}-?\d\b/g;
 
 export interface Aparicion {
   fila: number; // número de fila en el sheet
-  cuit: string;
+  cuit: string; // vacío si la fila no tiene CUIT
+  sinCuit?: boolean;
   tipo?: string; // A o B, tal como figura en el sheet
   total?: number;
   honorarios?: number;
@@ -46,7 +48,15 @@ interface Montos {
   honorarios?: number;
   iva?: number;
 }
-type FilaCruda = Montos & {demandado: string};
+type FilaCruda = Montos & {cuits: string[]; omitir: boolean};
+
+const tieneMontos = (m: Montos) =>
+  m.total !== undefined || m.honorarios !== undefined || m.iva !== undefined;
+
+// Filas de "TOTAL", "SUBTOTAL" o "SUMA": no son registros
+function esFilaDeTotales(r: unknown[]) {
+  return r.some((c) => /^(sub)?totales?\b|^suma\b/i.test(String(c ?? "").trim()));
+}
 
 // Convierte "223342,46", "$ 223.342,46" o un número real en number
 function parseMonto(valor: unknown): number | undefined {
@@ -67,10 +77,8 @@ function parseMonto(valor: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-// Lee la hoja desde el encabezado hacia abajo. null = no tiene la columna DEMANDADO.
-async function leerHoja(
-  sheet: GoogleSpreadsheetWorksheet,
-): Promise<{inicio: number; filas: FilaCruda[]} | null> {
+// Lee una hoja desde el encabezado hacia abajo. null = no tiene la columna DEMANDADO.
+async function leerHoja(sheet: GoogleSpreadsheetWorksheet): Promise<Aparicion[] | null> {
   const cabecera = await sheet.getCellsInRange("A1:AZ30");
 
   if (!cabecera) return null;
@@ -96,11 +104,14 @@ async function leerHoja(
     const inicio = f + 2; // primera fila de datos (en base 1)
     const datos = (await sheet.getCellsInRange(`A${inicio}:AZ`)) ?? [];
 
-    const leer = (r: unknown[] | undefined, col: number) => (col === -1 ? undefined : r?.[col]);
+    const leer = (r: unknown[], col: number) => (col === -1 ? undefined : r[col]);
 
     // filas[i] corresponde a la fila (inicio + i) del sheet
     const filas: FilaCruda[] = datos.map((r: unknown[]) => ({
-      demandado: String(leer(r, colDemandado) ?? ""),
+      cuits: (String(leer(r, colDemandado) ?? "").match(REGEX_CUIT) ?? []).map((c) =>
+        c.replace(/\D/g, ""),
+      ),
+      omitir: esFilaDeTotales(r ?? []),
       tipo:
         String(leer(r, colTipo) ?? "")
           .trim()
@@ -110,13 +121,58 @@ async function leerHoja(
       iva: parseMonto(leer(r, colIva)),
     }));
 
-    return {inicio, filas};
+    const consumidas = new Set<number>(); // filas de montos ya asignadas a un CUIT
+    const apariciones: Aparicion[] = [];
+
+    // 1) Filas con CUIT: montos propios, o los de la fila de arriba si esa es una fila de montos sin CUIT
+    filas.forEach((fila, i) => {
+      if (fila.cuits.length === 0) return;
+
+      let fuente: Montos = fila;
+
+      if (!tieneMontos(fila)) {
+        const arriba = filas[i - 1];
+
+        if (arriba && arriba.cuits.length === 0 && !arriba.omitir && tieneMontos(arriba)) {
+          fuente = arriba;
+          consumidas.add(i - 1);
+        }
+      }
+
+      for (const cuit of fila.cuits) {
+        apariciones.push({
+          fila: inicio + i,
+          cuit,
+          tipo: fila.tipo ?? fuente.tipo,
+          total: fuente.total,
+          honorarios: fuente.honorarios,
+          iva: fuente.iva,
+        });
+      }
+    });
+
+    // 2) Filas con montos que ningún CUIT reclamó: se agregan sin CUIT
+    filas.forEach((fila, i) => {
+      if (fila.cuits.length > 0 || fila.omitir || consumidas.has(i) || !tieneMontos(fila)) return;
+
+      apariciones.push({
+        fila: inicio + i,
+        cuit: "",
+        sinCuit: true,
+        tipo: fila.tipo,
+        total: fila.total,
+        honorarios: fila.honorarios,
+        iva: fila.iva,
+      });
+    });
+
+    return apariciones.sort((a, b) => a.fila - b.fila); // en el orden del sheet
   }
 
   return null;
 }
 
-// Lee las hojas indicadas (o todas) y devuelve cada aparición de un CUIT con sus datos
+// Lee las hojas indicadas (o todas) y devuelve cada aparición, con o sin CUIT
 export async function leerHojas(nombres?: string[]): Promise<HojaInfo[]> {
   const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_CUITS_ID!, getGoogleAuth());
 
@@ -127,33 +183,9 @@ export async function leerHojas(nombres?: string[]): Promise<HojaInfo[]> {
   for (const sheet of doc.sheetsByIndex) {
     if (nombres && !nombres.includes(sheet.title)) continue;
 
-    const datos = await leerHoja(sheet);
+    const apariciones = await leerHoja(sheet);
 
-    if (datos === null) continue; // hoja sin columna DEMANDADO
-
-    const apariciones: Aparicion[] = [];
-
-    datos.filas.forEach((f, i) => {
-      const cuits = f.demandado.match(/\b\d{2}-?\d{8}-?\d\b/g) ?? [];
-
-      if (cuits.length === 0) return;
-
-      // Si la fila del CUIT no tiene montos, se toman los de la fila de arriba
-      const tieneMontos =
-        f.total !== undefined || f.honorarios !== undefined || f.iva !== undefined;
-      const fuente: Montos = tieneMontos ? f : (datos.filas[i - 1] ?? {});
-
-      for (const c of cuits) {
-        apariciones.push({
-          fila: datos.inicio + i,
-          cuit: c.replace(/\D/g, ""),
-          tipo: f.tipo ?? fuente.tipo,
-          total: fuente.total,
-          honorarios: fuente.honorarios,
-          iva: fuente.iva,
-        });
-      }
-    });
+    if (apariciones === null) continue; // hoja sin columna DEMANDADO
 
     resultado.push({hoja: sheet.title, apariciones});
   }
