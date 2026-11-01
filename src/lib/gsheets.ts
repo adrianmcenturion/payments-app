@@ -32,6 +32,8 @@ export interface Aparicion {
   cuit: string; // vacío si la fila no tiene CUIT
   sinCuit?: boolean;
   tipo?: string; // A o B, tal como figura en el sheet
+  contribuyente?: string; // nuevo
+  vep?: string; // nuevo
   total?: number;
   honorarios?: number;
   iva?: number;
@@ -48,10 +50,18 @@ interface Montos {
   honorarios?: number;
   iva?: number;
 }
-type FilaCruda = Montos & {cuits: string[]; omitir: boolean};
+type FilaCruda = Montos & {
+  cuits: string[];
+  omitir: boolean;
+  contribuyente?: string; // nuevo
+  vep?: string; // nuevo
+};
 
 const tieneMontos = (m: Montos) =>
   m.total !== undefined || m.honorarios !== undefined || m.iva !== undefined;
+
+// Texto de la celda, o undefined si está vacía (sirve para números como el VEP, sin notación científica)
+const textoCelda = (v: unknown) => String(v ?? "").trim() || undefined;
 
 // Filas de "TOTAL", "SUBTOTAL" o "SUMA": no son registros
 function esFilaDeTotales(r: unknown[]) {
@@ -97,6 +107,8 @@ async function leerHoja(sheet: GoogleSpreadsheetWorksheet): Promise<Aparicion[] 
     const colTotal = encabezados.indexOf("TOTAL");
     const colHonor = encabezados.findIndex((e) => e.startsWith("HONOR"));
     const colIva = encabezados.indexOf("IVA");
+    const colContribuyente = encabezados.indexOf("CONTRIBUYENTE");
+    const colVep = encabezados.indexOf("VEP");
     let colTipo = encabezados.indexOf("TIPO");
 
     if (colTipo === -1) colTipo = encabezados.findIndex((e) => e.startsWith("TIPO"));
@@ -116,6 +128,8 @@ async function leerHoja(sheet: GoogleSpreadsheetWorksheet): Promise<Aparicion[] 
         String(leer(r, colTipo) ?? "")
           .trim()
           .toUpperCase() || undefined,
+      contribuyente: textoCelda(leer(r, colContribuyente)), // nuevo
+      vep: textoCelda(leer(r, colVep)), // nuevo
       total: parseMonto(leer(r, colTotal)),
       honorarios: parseMonto(leer(r, colHonor)),
       iva: parseMonto(leer(r, colIva)),
@@ -144,6 +158,8 @@ async function leerHoja(sheet: GoogleSpreadsheetWorksheet): Promise<Aparicion[] 
           fila: inicio + i,
           cuit,
           tipo: fila.tipo ?? fuente.tipo,
+          contribuyente: fila.contribuyente,
+          vep: fila.vep,
           total: fuente.total,
           honorarios: fuente.honorarios,
           iva: fuente.iva,
@@ -160,6 +176,8 @@ async function leerHoja(sheet: GoogleSpreadsheetWorksheet): Promise<Aparicion[] 
         cuit: "",
         sinCuit: true,
         tipo: fila.tipo,
+        contribuyente: fila.contribuyente,
+        vep: fila.vep,
         total: fila.total,
         honorarios: fila.honorarios,
         iva: fila.iva,

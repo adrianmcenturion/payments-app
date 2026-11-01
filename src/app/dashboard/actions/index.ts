@@ -28,6 +28,8 @@ export type Fila = Datos & {
   hoja: string;
   fila: number;
   tipo?: string; // el que figura en el sheet
+  contribuyente?: string; // nuevo
+  vep?: string; // nuevo
   total?: number;
   honorarios?: number;
   iva?: number;
@@ -124,6 +126,8 @@ export async function consultarDesdeSheet(
         hoja: a.hoja,
         fila: a.fila,
         tipo: a.tipo,
+        contribuyente: a.contribuyente, // nuevo
+        vep: a.vep, // nuevo
         total: a.total,
         honorarios: a.honorarios,
         iva: a.iva,

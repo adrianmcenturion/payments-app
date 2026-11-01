@@ -1,5 +1,7 @@
 "use client";
 
+import type {KeyboardEvent} from "react";
+
 import {useState} from "react";
 import {useFormState, useFormStatus} from "react-dom";
 
@@ -86,6 +88,44 @@ function SubmitButton() {
 export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
   const [state, formAction] = useFormState(consultarDesdeSheet, initialState);
   const [filtro, setFiltro] = useState("todas");
+  const [copiado, setCopiado] = useState<string | null>(null);
+  const [hover, setHover] = useState<string | null>(null); // nuevo
+
+  async function copiarContribuyenteVep(f: Fila, clave: string) {
+    const texto = [f.contribuyente, f.vep].filter(Boolean).join(" ");
+
+    if (!texto) return;
+
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(clave);
+      setTimeout(() => setCopiado((actual) => (actual === clave ? null : actual)), 1500);
+    } catch (e) {
+      console.error("No pude copiar al portapapeles", e);
+    }
+  }
+
+  // Props de "botón" para las celdas Contribuyente y VEP (vacías si la fila no tiene ninguno de los dos)
+  function propsCopiar(f: Fila, clave: string) {
+    if (!f.contribuyente && !f.vep) return {};
+
+    return {
+      role: "button" as const,
+      tabIndex: 0,
+      title: "Copiar contribuyente y VEP",
+      onClick: () => copiarContribuyenteVep(f, clave),
+      onMouseEnter: () => setHover(clave), // nuevo
+      onMouseLeave: () => setHover(null), // nuevo
+      onFocus: () => setHover(clave), // nuevo: lo mismo al navegar con Tab
+      onBlur: () => setHover(null), // nuevo
+      onKeyDown: (e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          copiarContribuyenteVep(f, clave);
+        }
+      },
+    };
+  }
 
   const todas = state.status === "ok" ? state.filas : [];
   const filas = filtro === "todas" ? todas : todas.filter((f) => f.hoja === filtro);
@@ -101,7 +141,7 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
   const diferencias = filas.filter(tipoDistinto).length;
   const sinCuit = filas.filter((f) => f.estado === "sin_cuit").length;
 
-  const columnas = filtro === "todas" ? 12 : 11;
+  const columnas = filtro === "todas" ? 14 : 13;
   const previas = columnas - 4;
 
   return (
@@ -171,6 +211,8 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
                     <TableHead>Cond. IVA</TableHead>
                     <TableHead className="text-center">Tipo</TableHead>
                     <TableHead className="text-center">Sugerido</TableHead>
+                    <TableHead>Contribuyente</TableHead>
+                    <TableHead>VEP</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Honorarios</TableHead>
                     <TableHead className="text-right">IVA</TableHead>
@@ -185,40 +227,67 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filas.map((f, i) => (
-                      <TableRow key={`${f.hoja}-${f.fila}-${f.cuit}-${i}`}>
-                        {filtro === "todas" && <TableCell>{f.hoja}</TableCell>}
-                        <TableCell>{f.fila}</TableCell>
-                        <TableCell className="font-mono">{f.cuit || "-"}</TableCell>
-                        <TableCell>{f.nombre ?? "-"}</TableCell>
-                        <TableCell>{f.direccion ?? "-"}</TableCell>
-                        <TableCell>{formatearCondicion(f.condicion)}</TableCell>
-                        <TableCell className="text-center">
-                          {f.tipo ? (
-                            <Badge variant={tipoDistinto(f) ? "destructive" : "secondary"}>
-                              {f.tipo}
-                            </Badge>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {f.tipoSugerido ? <Badge variant="outline">{f.tipoSugerido}</Badge> : "-"}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatearMonto(f.total)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatearMonto(f.honorarios)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {formatearMonto(f.iva)}
-                        </TableCell>
-                        <TableCell>
-                          <EstadoBadge fila={f} />
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filas.map((f, i) => {
+                      const clave = `${f.hoja}-${f.fila}-${f.cuit}-${i}`;
+                      const copiable = Boolean(f.contribuyente || f.vep);
+                      const claseCopiable = copiable
+                        ? `cursor-pointer transition-colors ${
+                            copiado === clave
+                              ? "bg-green-100 dark:bg-green-900/40"
+                              : hover === clave
+                                ? "bg-muted"
+                                : ""
+                          }`
+                        : "";
+
+                      return (
+                        <TableRow key={clave}>
+                          {filtro === "todas" && <TableCell>{f.hoja}</TableCell>}
+                          <TableCell>{f.fila}</TableCell>
+                          <TableCell className="font-mono">{f.cuit || "-"}</TableCell>
+                          <TableCell>{f.nombre ?? "-"}</TableCell>
+                          <TableCell>{f.direccion ?? "-"}</TableCell>
+                          <TableCell>{formatearCondicion(f.condicion)}</TableCell>
+                          <TableCell className="text-center">
+                            {f.tipo ? (
+                              <Badge variant={tipoDistinto(f) ? "destructive" : "secondary"}>
+                                {f.tipo}
+                              </Badge>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {f.tipoSugerido ? (
+                              <Badge variant="outline">{f.tipoSugerido}</Badge>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className={claseCopiable} {...propsCopiar(f, clave)}>
+                            {f.contribuyente ?? "-"}
+                          </TableCell>
+                          <TableCell
+                            className={`font-mono ${claseCopiable}`}
+                            {...propsCopiar(f, clave)}
+                          >
+                            {f.vep ?? "-"}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatearMonto(f.total)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatearMonto(f.honorarios)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatearMonto(f.iva)}
+                          </TableCell>
+                          <TableCell>
+                            <EstadoBadge fila={f} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
                 {filas.length > 0 && (
