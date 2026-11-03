@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const FECHA = "30-sep";
+const FECHA = "31-oct";
 const ORDEN_HOJAS = ["APA", "AA", "MM"]; // las demás hojas van después, por nombre
 
 const formato = new Intl.NumberFormat("es-AR", {
