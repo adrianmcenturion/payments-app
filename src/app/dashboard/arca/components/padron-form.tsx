@@ -42,6 +42,11 @@ function formatearMonto(n?: number) {
   return n === undefined ? "-" : pesos.format(n);
 }
 
+// Monto con coma decimal y sin separador de miles: 123053,69
+function montoParaCopiar(n: number) {
+  return n.toFixed(2).replace(".", ",");
+}
+
 function formatearCondicion(condicion?: string) {
   if (!condicion) return "-";
 
@@ -91,11 +96,7 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
   const [copiado, setCopiado] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null); // nuevo
 
-  async function copiarContribuyenteVep(f: Fila, clave: string) {
-    const texto = [f.contribuyente, f.vep].filter(Boolean).join(" ");
-
-    if (!texto) return;
-
+  async function copiarTexto(texto: string, clave: string) {
     try {
       await navigator.clipboard.writeText(texto);
       setCopiado(clave);
@@ -105,26 +106,34 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
     }
   }
 
-  // Props de "botón" para las celdas Contribuyente y VEP (vacías si la fila no tiene ninguno de los dos)
-  function propsCopiar(f: Fila, clave: string) {
-    if (!f.contribuyente && !f.vep) return {};
+  // Props de "botón" para una celda copiable (vacías si no hay nada para copiar)
+  function propsCopiar(texto: string | undefined, clave: string, titulo: string) {
+    if (!texto) return {};
 
     return {
       role: "button" as const,
       tabIndex: 0,
-      title: "Copiar contribuyente y VEP",
-      onClick: () => copiarContribuyenteVep(f, clave),
-      onMouseEnter: () => setHover(clave), // nuevo
-      onMouseLeave: () => setHover(null), // nuevo
-      onFocus: () => setHover(clave), // nuevo: lo mismo al navegar con Tab
-      onBlur: () => setHover(null), // nuevo
+      title: titulo,
+      onClick: () => copiarTexto(texto, clave),
+      onMouseEnter: () => setHover(clave),
+      onMouseLeave: () => setHover(null),
+      onFocus: () => setHover(clave),
+      onBlur: () => setHover(null),
       onKeyDown: (e: KeyboardEvent) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          copiarContribuyenteVep(f, clave);
+          copiarTexto(texto, clave);
         }
       },
     };
+  }
+
+  function claseCopiable(texto: string | undefined, clave: string) {
+    if (!texto) return "";
+
+    return `cursor-pointer transition-colors ${
+      copiado === clave ? "bg-green-100 dark:bg-green-900/40" : hover === clave ? "bg-muted" : ""
+    }`;
   }
 
   const todas = state.status === "ok" ? state.filas : [];
@@ -229,16 +238,16 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
                   ) : (
                     filas.map((f, i) => {
                       const clave = `${f.hoja}-${f.fila}-${f.cuit}-${i}`;
-                      const copiable = Boolean(f.contribuyente || f.vep);
-                      const claseCopiable = copiable
-                        ? `cursor-pointer transition-colors ${
-                            copiado === clave
-                              ? "bg-green-100 dark:bg-green-900/40"
-                              : hover === clave
-                                ? "bg-muted"
-                                : ""
-                          }`
-                        : "";
+
+                      // Contribuyente + VEP: se copian juntos, separados por un espacio
+                      const textoCV =
+                        [f.contribuyente, f.vep].filter(Boolean).join(" ") || undefined;
+                      const claveCV = `${clave}-cv`;
+
+                      // Honorarios: se copia con coma decimal y sin punto de miles
+                      const textoHonor =
+                        f.honorarios === undefined ? undefined : montoParaCopiar(f.honorarios);
+                      const claveHonor = `${clave}-honor`;
 
                       return (
                         <TableRow key={clave}>
@@ -264,19 +273,25 @@ export function SheetForm({hojas}: {hojas: HojaResumen[]}) {
                               "-"
                             )}
                           </TableCell>
-                          <TableCell className={claseCopiable} {...propsCopiar(f, clave)}>
+                          <TableCell
+                            className={claseCopiable(textoCV, claveCV)}
+                            {...propsCopiar(textoCV, claveCV, "Copiar contribuyente y VEP")}
+                          >
                             {f.contribuyente ?? "-"}
                           </TableCell>
                           <TableCell
-                            className={`font-mono ${claseCopiable}`}
-                            {...propsCopiar(f, clave)}
+                            className={`font-mono ${claseCopiable(textoCV, claveCV)}`}
+                            {...propsCopiar(textoCV, claveCV, "Copiar contribuyente y VEP")}
                           >
                             {f.vep ?? "-"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {formatearMonto(f.total)}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">
+                          <TableCell
+                            className={`text-right tabular-nums ${claseCopiable(textoHonor, claveHonor)}`}
+                            {...propsCopiar(textoHonor, claveHonor, "Copiar honorarios")}
+                          >
                             {formatearMonto(f.honorarios)}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
