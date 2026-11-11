@@ -44,7 +44,7 @@ function formatearMonto(n?: number) {
 
 // Monto con coma decimal y sin separador de miles: 123053,69
 function montoParaCopiar(n: number) {
-  return n.toFixed(2).replace(".", ",");
+  return n.toFixed(2);
 }
 
 function formatearCondicion(condicion?: string) {
